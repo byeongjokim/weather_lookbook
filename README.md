@@ -26,3 +26,24 @@
 `Get Pages site failed` 또는 `HttpError: Not Found`가 나오면 GitHub Pages가 아직 저장소에서 활성화되지 않은 상태일 가능성이 큽니다. GitHub 저장소 화면에서 `Settings > Pages`로 이동한 뒤 `Build and deployment`의 `Source`를 `GitHub Actions`로 설정하고 저장한 다음, 실패한 workflow를 다시 실행하세요.
 
 Node 20 deprecation 경고를 피하기 위해 Pages 관련 공식 액션은 Node 24 기반 최신 major 버전을 사용합니다.
+
+## GitHub Environment로 날씨값 테스트
+
+실제 배포 전에 GitHub Actions의 `workflow_dispatch`와 GitHub Environment 변수를 이용해 테스트 날씨값을 주입할 수 있습니다.
+
+1. GitHub 저장소에서 `Settings > Environments`로 이동해 테스트용 Environment를 만듭니다. 예: `weather-test`.
+2. 해당 Environment의 Variables에 아래 값을 추가합니다.
+   - `ENABLE_WEATHER_TEST_MODE`: `true` (이 값이 있는 Environment에서만 테스트값 주입이 진행됩니다.)
+   - `TEST_TEMPERATURE`: 테스트할 기온 숫자. 예: `27`, `15`
+   - `TEST_PRECIPITATION_TYPE`: `none`, `rain`, `snow` 중 하나
+   - 선택: `TEST_HUMIDITY`: 테스트 습도 숫자. 기본값은 `55`입니다.
+3. `Actions > Deploy static site to GitHub Pages > Run workflow`에서 테스트 Environment를 선택합니다.
+4. 필요하면 실행 화면에서 `test_temperature`, `test_precipitation` 입력값으로 Environment 변수값을 일시적으로 덮어쓸 수 있습니다. `test_precipitation`은 `none`, `rain`, `snow` 중 하나로 입력합니다.
+
+테스트 입력값을 넣었는데 선택한 Environment에 `ENABLE_WEATHER_TEST_MODE=true`가 없으면 workflow가 실패합니다. 일반 push 배포는 기본 `github-pages` Environment를 사용하며 실제 기상청 API 값을 표시합니다.
+
+현재 룩북 노출 규칙은 다음과 같습니다.
+
+- 비가 오면 기온과 상관없이 `assets/lookbook/rainy.jpeg`
+- 눈/비가 없고 25°C 이상이면 `assets/lookbook/hot.jpeg`
+- 눈/비가 없고 10°C 이상 20°C 이하이면 `assets/lookbook/mild.jpeg`
