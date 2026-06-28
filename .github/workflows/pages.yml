@@ -4,6 +4,19 @@ on:
   push:
     branches: ["main", "work"]
   workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: "테스트에 사용할 GitHub Environment"
+        required: false
+        type: environment
+      test_temperature:
+        description: "테스트 기온(°C). 비워두면 Environment 변수 TEST_TEMPERATURE 사용"
+        required: false
+        type: string
+      test_precipitation:
+        description: "테스트 강수 타입: none, rain, snow. 비워두면 Environment 변수 TEST_PRECIPITATION_TYPE 사용"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -17,12 +30,61 @@ concurrency:
 jobs:
   deploy:
     environment:
-      name: github-pages
+      name: ${{ inputs.deploy_environment || 'github-pages' }}
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Guard GitHub Environment test mode
+        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.test_temperature != '' || inputs.test_precipitation != '') }}
+        run: |
+          if [ "${{ vars.ENABLE_WEATHER_TEST_MODE }}" != "true" ]; then
+            echo "GitHub Environment 변수 ENABLE_WEATHER_TEST_MODE=true 가 설정된 Environment에서만 테스트 날씨값을 사용할 수 있습니다."
+            exit 1
+          fi
+      - name: Generate weather test override
+        if: ${{ github.event_name == 'workflow_dispatch' && vars.ENABLE_WEATHER_TEST_MODE == 'true' }}
+        env:
+          INPUT_TEMPERATURE: ${{ inputs.test_temperature }}
+          INPUT_PRECIPITATION: ${{ inputs.test_precipitation }}
+          ENV_TEMPERATURE: ${{ vars.TEST_TEMPERATURE }}
+          ENV_PRECIPITATION: ${{ vars.TEST_PRECIPITATION_TYPE }}
+          ENV_HUMIDITY: ${{ vars.TEST_HUMIDITY }}
+        run: |
+          TEMPERATURE="${INPUT_TEMPERATURE:-$ENV_TEMPERATURE}"
+          PRECIPITATION="${INPUT_PRECIPITATION:-$ENV_PRECIPITATION}"
+          HUMIDITY="${ENV_HUMIDITY:-55}"
+
+          if [ -z "$TEMPERATURE" ] || [ -z "$PRECIPITATION" ]; then
+            echo "TEST_TEMPERATURE와 TEST_PRECIPITATION_TYPE Environment 변수를 설정하거나 workflow_dispatch 입력값을 넣어주세요."
+            exit 1
+          fi
+
+          case "$PRECIPITATION" in
+            none|rain|snow) ;;
+            *) echo "TEST_PRECIPITATION_TYPE은 none, rain, snow 중 하나여야 합니다."; exit 1 ;;
+          esac
+
+          TEMPERATURE="$TEMPERATURE" node -e "const n=Number(process.env.TEMPERATURE); if (!Number.isFinite(n)) process.exit(1)" || {
+            echo "TEST_TEMPERATURE는 숫자여야 합니다."
+            exit 1
+          }
+
+          HUMIDITY="$HUMIDITY" node -e "const n=Number(process.env.HUMIDITY); if (!Number.isFinite(n)) process.exit(1)" || {
+            echo "TEST_HUMIDITY는 숫자여야 합니다."
+            exit 1
+          }
+
+          cat > src/runtime-config.js <<EOF_CONFIG
+          window.__WEATHER_LOOKBOOK_OVERRIDE__ = {
+            enabled: true,
+            temperature: Number(${TEMPERATURE}),
+            humidity: Number(${HUMIDITY}),
+            precipitationType: "${PRECIPITATION}",
+            baseTime: "1200",
+          };
+          EOF_CONFIG
       - name: Setup Pages
         uses: actions/configure-pages@v6
       - name: Upload artifact

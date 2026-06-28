@@ -23,6 +23,13 @@ const weatherIcons = {
 
 async function init() {
   const status = document.querySelector("#statusMessage");
+  const testWeather = getTestWeather();
+  if (testWeather) {
+    render(testWeather, "GitHub Environment 테스트 날씨값을 표시 중입니다.");
+    status.dataset.ready = "true";
+    return;
+  }
+
   try {
     const weather = await fetchCurrentWeather(WEATHER_CONFIG);
     render(weather, "기상청 초단기실황 기준으로 업데이트되었습니다.");
@@ -31,6 +38,18 @@ async function init() {
     render(fallbackWeather, `임시 날씨값을 표시 중입니다. ${error.message}`);
   }
   status.dataset.ready = "true";
+}
+
+function getTestWeather() {
+  const override = window.__WEATHER_LOOKBOOK_OVERRIDE__;
+  if (!override?.enabled) return null;
+
+  return {
+    temperature: Number(override.temperature),
+    humidity: Number(override.humidity ?? fallbackWeather.humidity),
+    precipitationType: override.precipitationType ?? "none",
+    baseTime: override.baseTime ?? "1200",
+  };
 }
 
 function render(weather, statusMessage) {
