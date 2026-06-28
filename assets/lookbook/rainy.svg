@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1180" role="img" aria-label="24/7 series rainy lookbook placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f7f7f4"/>
+      <stop offset="1" stop-color="#deded9"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="1180" fill="url(#bg)"/>
+  <rect x="130" y="90" width="640" height="1000" fill="#ffffff" opacity=".55"/>
+  <circle cx="450" cy="260" r="86" fill="#161616"/>
+  <path d="M300 430c30-92 270-92 300 0l54 360c14 94-56 190-204 190S232 884 246 790z" fill="#222"/>
+  <path d="M338 462h224v340H338z" fill="#3a3a36"/>
+  <path d="M338 802h88v214h-88zM474 802h88v214h-88z" fill="#181818"/>
+  <text x="450" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" letter-spacing="8" fill="#111">24/7 SERIES</text>
+  <text x="450" y="1048" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#111">rainy</text>
+  <text x="450" y="1100" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#555">Replace this SVG with your PNG lookbook</text>
+</svg>
